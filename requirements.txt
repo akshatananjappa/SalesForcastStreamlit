@@ -5,3 +5,4 @@ mangum
 matplotlib
 seaborn
 statsmodels
+plotly
