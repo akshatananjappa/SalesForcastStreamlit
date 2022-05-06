@@ -8,15 +8,19 @@ import base64
 import gc
 import statsmodels.api as sm
 from requests.structures import CaseInsensitiveDict
+import warnings
+warnings.filterwarnings('ignore')
 
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objs as go
+from streamlit_option_menu import option_menu
 
 def main():
 
+    st.set_page_config(layout="wide")
     # st.text_input("Login", "")
     # st.text_input("Logout", "")
 
@@ -57,9 +61,10 @@ def main():
 
         if st.sidebar.checkbox("Show Records"):
             
+            st.subheader("Dataset")
             table = pd.read_csv("./data/table.csv")
             train_data = pd.read_csv("./data/train.csv", index_col="id", header=0, parse_dates=['date'])
-            stores_data = pd.read_csv("./stores.csv", index_col="store_nbr", header=0)
+            stores_data = pd.read_csv("./data/stores.csv", index_col="store_nbr", header=0)
             transactions_data = pd.read_csv("./data/transactions.csv", index_col=None, header=0, parse_dates=['date'])
 
             st.write(table)
@@ -91,30 +96,38 @@ def main():
         if st.sidebar.checkbox("Login"):
             if password == '1234':
 
-                #st.empty()
-                st.title("Product Sales")
+                selected = option_menu(
+                menu_title="Analytics Dashboard", 
+                options=["Products", "Stores", "Sales vs Oil", "HolidayEvent", "Transactions", "ACF & PACF"],
+                icons=["archive", "basket2", "device-ssd", "collection", "credit-card", "boombox"],
+                default_index=0, orientation="horizontal",
+                styles={"container": {"padding": "0!important", "background-color": "#fafafa"},
+                 "icon": {"color": "orange", "font-size": "14px"}, 
+                 "nav-link": {"font-size": "14px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
+                 "nav-link-selected": {"background-color": "bg-success p-2 text-dark bg-opacity-50"},
+                 })
 
-                pages = {
-                #"Product Sales": page_first,
-                "Product Analytics": page_second,
-                "Stores": page_third,
-                "Sales vs Oil": page_fourth,
-                "Holidays & Events": page_fifth,
-                "Transactions": page_sixth,
-                "ACF & PACF": page_seventh
-                }
+                if selected == "Products":
+                    #st.title("Analytics Dashboard")
+                    page_second()
 
-                if "page" not in st.session_state:
-                    st.session_state.update({
-                        # Default page
-                        "page": "Product Analytics"
-                    })
+                if selected == "Stores":
+                    page_third()
 
-                page = st.radio("Dashboard", tuple(pages.keys()))
+                if selected == "Sales vs Oil":
+                    page_fourth()  
 
-                pages[page]()
+                if selected == "HolidayEvent":
+                    page_fifth()  
+
+                if selected == "Transactions":
+                    page_sixth()  
+
+                if selected == "ACF & PACF":
+                    page_seventh()  
+
             else:
-                st.write("Incorrect password")
+                st.sidebar.write("Username & Password do not match.")
 
             
 def page_first():
@@ -150,6 +163,8 @@ def page_first():
 
 
 def page_second():
+
+    st.header("Product Family vs Sales")
     train_data = pd.read_csv("./data/train.csv", index_col="id", header=0, parse_dates=['date'])
 
     pf = train_data['family'].unique()
@@ -205,8 +220,10 @@ def page_second():
 
 def page_third():
 
+    st.header("Store Analysis")
+
     l = ["Promotions per Store", "Analysis with Product Family"]
-    opt = st.selectbox("Dashboard", l)
+    opt = st.selectbox("Select the Analysis Type", l)
 
     if st.checkbox("Analysis"):
         if opt == "Promotions per Store":
@@ -278,6 +295,9 @@ def page_third():
 
 
 def page_fourth():
+
+    st.header("Oil Prices vs Product Family Sales")
+
     train = pd.read_csv("./data/train.csv")
 
     oil = pd.read_csv("./data/oil.csv")
@@ -309,6 +329,9 @@ def page_fourth():
 
 def page_fifth():
 
+    st.header("Holidays & Events Data Analysis")
+    st.write("")
+
     # filter holidays for the training dataset window.
     holidays_events = pd.read_csv('./data/holidays_events.csv')
     train = pd.read_csv('./data/train.csv')
@@ -322,7 +345,8 @@ def page_fifth():
     y=train_aux['sales'],
     marker_color='red', text="sales"))
 
-    if st.button("Average Sales by Date with Holidays & Events"):
+    if st.checkbox("Average Sales by Date with Holidays & Events"):
+        st.write("")
         for holiday_date in list(holidays_events['date']):
             fig.add_vline(x=holiday_date, line_width=0.5, line_dash="dash", line_color="green")
 
@@ -335,7 +359,7 @@ def page_fifth():
         st.image('./images/sales-holiday.png')
         fig.show()
 
-    if st.button("Average Sales on Holidays & Events"):
+    if st.checkbox("Average Sales on Holidays & Events"):
 
         df_plot = pd.merge(holidays_events, train_aux, on='date', how='inner')
         df_plot.loc[df_plot['description'].isin(['Black Friday', 'Cyber Monday']), 'type'] = 'black_friday_cyber_monday'
@@ -369,6 +393,8 @@ def page_fifth():
 
 
 def page_sixth():
+
+    st.header("Store vs Transactions Analysis")
 
     selection = st.number_input("Store Number", min_value=1, max_value=54, step=1)
     if st.button("Select"):
