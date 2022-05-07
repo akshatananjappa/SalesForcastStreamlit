@@ -94,7 +94,7 @@ def main():
         #     width=750, use_column_width=None, clamp=False, channels="RGB", output_format="auto")
 
         if st.sidebar.checkbox("Login"):
-            if password == '1234':
+            if password == 'Admin@1234':
 
                 selected = option_menu(
                 menu_title="Analytics Dashboard", 
